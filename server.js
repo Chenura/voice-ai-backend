@@ -1,8 +1,6 @@
 import express from "express";
-import multer from "multer";
 import cors from "cors";
 import dotenv from "dotenv";
-import fs from "fs";
 
 dotenv.config();
 
@@ -10,18 +8,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: "uploads/" });
-
-/* ======================
+/* =========================
    🏠 TEST ROUTE
-====================== */
+========================= */
 app.get("/", (req, res) => {
-  res.send("🚀 Gemini AI Voice Backend Running");
+  res.send("🚀 Gemini AI Backend Running");
 });
 
-/* ======================
+/* =========================
    🧠 SUMMARIZE (GEMINI)
-====================== */
+========================= */
 app.post("/summarize", async (req, res) => {
   try {
     const { text } = req.body;
@@ -59,9 +55,9 @@ app.post("/summarize", async (req, res) => {
   }
 });
 
-/* ======================
+/* =========================
    🌍 TRANSLATE (GEMINI)
-====================== */
+========================= */
 app.post("/translate", async (req, res) => {
   try {
     const { text, lang } = req.body;
@@ -98,9 +94,9 @@ app.post("/translate", async (req, res) => {
   }
 });
 
-/* ======================
-   🚀 SERVER START
-====================== */
+/* =========================
+   🚀 START SERVER
+========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
