@@ -8,20 +8,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* =========================
-   🏠 TEST ROUTE
-========================= */
+// 🏠 Health check
 app.get("/", (req, res) => {
-  res.send("🚀 Gemini AI Backend Running");
+  res.send("🚀 Pro Gemini AI Backend Running");
 });
 
-/* =========================
-   🧠 SUMMARIZE (GEMINI)
-========================= */
+// 🧠 SUMMARIZE
 app.post("/summarize", async (req, res) => {
-  try {
-    const { text } = req.body;
+  const { text } = req.body;
 
+  try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
@@ -30,11 +26,7 @@ app.post("/summarize", async (req, res) => {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: `Summarize this in simple points:\n\n${text}`
-                }
-              ]
+              parts: [{ text: `Summarize this clearly:\n\n${text}` }]
             }
           ]
         })
@@ -44,24 +36,20 @@ app.post("/summarize", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      text:
+      result:
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "No summary generated"
+        "No response"
     });
-
   } catch (err) {
-    console.log(err);
-    res.json({ text: "Summary error" });
+    res.json({ result: "Error generating summary" });
   }
 });
 
-/* =========================
-   🌍 TRANSLATE (GEMINI)
-========================= */
+// 🌍 TRANSLATE
 app.post("/translate", async (req, res) => {
-  try {
-    const { text, lang } = req.body;
+  const { text, lang } = req.body;
 
+  try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
@@ -70,11 +58,7 @@ app.post("/translate", async (req, res) => {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: `Translate this to ${lang}:\n\n${text}`
-                }
-              ]
+              parts: [{ text: `Translate to ${lang}:\n\n${text}` }]
             }
           ]
         })
@@ -84,21 +68,17 @@ app.post("/translate", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      text:
+      result:
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "Translation failed"
+        "No response"
     });
-
   } catch (err) {
-    res.json({ text: "Translation error" });
+    res.json({ result: "Error translating" });
   }
 });
 
-/* =========================
-   🚀 START SERVER
-========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("Server running on", PORT);
 });
