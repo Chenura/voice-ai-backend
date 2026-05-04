@@ -3,8 +3,6 @@ import multer from "multer";
 import cors from "cors";
 import dotenv from "dotenv";
 import fs from "fs";
-import fetch from "node-fetch";
-import FormData from "form-data";
 
 dotenv.config();
 
@@ -14,76 +12,33 @@ app.use(express.json());
 
 const upload = multer({ dest: "uploads/" });
 
-/* =======================
-   HEALTH CHECK
-======================= */
+/* ======================
+   🏠 TEST ROUTE
+====================== */
 app.get("/", (req, res) => {
-  res.send("AI Voice Backend Running 🚀");
+  res.send("🚀 Gemini AI Voice Backend Running");
 });
 
-/* =======================
-   🎤 VOICE → TEXT
-======================= */
-app.post("/transcribe", upload.single("audio"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.json({ text: "No audio received" });
-    }
-
-    const formData = new FormData();
-    formData.append("file", fs.createReadStream(req.file.path), "audio.webm");
-    formData.append("model", "whisper-1");
-
-    const response = await fetch(
-      "https://api.openai.com/v1/audio/transcriptions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.API_KEY}`
-        },
-        body: formData
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("TRANSCRIBE RESPONSE:", data);
-
-    if (data.error) {
-      return res.json({ text: "Speech error: " + data.error.message });
-    }
-
-    res.json({
-      text: data.text || "Could not detect speech"
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.json({ text: "Server error in transcription" });
-  }
-});
-
-/* =======================
-   🧠 SUMMARIZE
-======================= */
+/* ======================
+   🧠 SUMMARIZE (GEMINI)
+====================== */
 app.post("/summarize", async (req, res) => {
   try {
     const { text } = req.body;
 
     const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.API_KEY}`,
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
+          contents: [
             {
-              role: "user",
-              content: `Summarize this in simple points:\n\n${text}`
+              parts: [
+                {
+                  text: `Summarize this in simple points:\n\n${text}`
+                }
+              ]
             }
           ]
         })
@@ -93,35 +48,37 @@ app.post("/summarize", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      text: data.choices?.[0]?.message?.content || "No summary"
+      text:
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "No summary generated"
     });
 
   } catch (err) {
+    console.log(err);
     res.json({ text: "Summary error" });
   }
 });
 
-/* =======================
-   🌍 TRANSLATE
-======================= */
+/* ======================
+   🌍 TRANSLATE (GEMINI)
+====================== */
 app.post("/translate", async (req, res) => {
   try {
     const { text, lang } = req.body;
 
     const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.API_KEY}`,
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
+          contents: [
             {
-              role: "user",
-              content: `Translate to ${lang}:\n\n${text}`
+              parts: [
+                {
+                  text: `Translate this to ${lang}:\n\n${text}`
+                }
+              ]
             }
           ]
         })
@@ -131,7 +88,9 @@ app.post("/translate", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      text: data.choices?.[0]?.message?.content || "Translation failed"
+      text:
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "Translation failed"
     });
 
   } catch (err) {
@@ -139,9 +98,9 @@ app.post("/translate", async (req, res) => {
   }
 });
 
-/* =======================
-   START SERVER
-======================= */
+/* ======================
+   🚀 SERVER START
+====================== */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
